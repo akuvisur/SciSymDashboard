@@ -1,0 +1,39 @@
+.schema_info {
+	/*background-color: #CCE6FF;*/
+	border: 2px solid #cccccc;
+	border-radius: 6px;
+	padding: 2px;
+	margin: 4px;
+}
+
+.schema_symptoms {
+	border: 2px solid #dddddd;
+	border-radius: 2px;
+	padding: 4px;
+	margin-bottom: 4px;
+	background-color: #91aaff;
+	color: white;
+}
+
+.schema_factors {
+	border: 2px solid #dddddd;
+	border-radius: 2px;
+	padding: 4px;
+	margin: 4px;
+	background-color: #4DB870;
+	color: white;
+}
+
+/* alert popups */
+.shinyalert {
+	border-radius: 3px;
+	padding: 4px;
+	margin: 4px;
+	opacity: 0.8 !important;
+}
+
+/* datatable styles */
+table.dataTable td {
+	/*white-space: nowrap;
+	text-overflow: ellipsis;*/
+}
