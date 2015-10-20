@@ -3,13 +3,8 @@ library(httr)
 library(jsonlite)
 require(shinysky)
 library(shinyjs)
-library(rPython)
 library(shinydashboard)
 library(DT)
-
-beer = getURL("http://localhost:8092/beer-sample/_design/dev_beer/_view/by_location?stale=update_after&inclusive_end=true&connection_timeout=60000&limit=50&skip=0")
-
-beerjson = fromJSON(beer)
 
 schemas = jsonlite::fromJSON(getURL("http://localhost:5000/schema/all/"))
 
@@ -48,23 +43,6 @@ ui <- function() {
 }
 
 server <- function(input, output, session) {
-  set.seed(122)
-  histdata <- rnorm(500)
-  output$plot1 <- renderPlot({
-    data <- histdata[seq_len(input$slider)]
-    hist(data)
-  })
-  
-  output$beers <- renderUI({
-    lapply(1:length(beerjson$rows$id), function(i) {
-      valueBox(paste("row", i, sep=" "), beerjson$rows$id[i])
-    })
-  })
-
-  #output$schemas <- renderUI({
-    #tags$textarea(cols=100, rows=8, paste(schemas))
-    #renderDataTable(schemas)
-  #})
   
   output$factor_creator <- renderUI({
     if (is.null(input$factor_type))
