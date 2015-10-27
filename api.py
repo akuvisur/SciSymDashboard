@@ -60,6 +60,10 @@ def allSymptoms():
   rows = c.query("dev_symptoms", "all")
   
   result = list()
+
+  if not rows:
+    return "uliuli"
+
   for row in rows:
     rowvalue = dict()
     for key in row.value.keys():
