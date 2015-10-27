@@ -203,6 +203,15 @@ def getFactors():
       
   return json.dumps(result)
 
+@app.route('/factor/all/', methods=['GET'])
+def getAllFactors():
+  rows = c.query("dev_factors", "all")
+  result = list()
+  for row in rows:
+    result.append(row.key)
+
+  return json.dumps(result)
+
 
 @app.route('/schema/add/', methods=['POST'])
 def addschema():
@@ -241,9 +250,14 @@ def addschema():
 def getSchemas():
   print "uliuli?"
   q = Query()
+  print "1"
   rows = c.query("dev_schemas", "all")
-  
+  print "2"
   result = list()
+  
+  print rows
+  if rows.rows_returned == 0:
+    return json.dumps(result)
   for row in rows:
     result.append(row.key)
   
