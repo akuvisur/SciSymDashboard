@@ -11,11 +11,13 @@ from couchbase.exceptions import CouchbaseError, KeyExistsError, NotFoundError
 from couchbase.views.params import Query
 from couchbase.views.iterator import RowProcessor
 
+PORT = 10001
+
 app = Flask(__name__, static_url_path='')
 app.config.from_object(__name__)
 CORS(app)
 
-c = Bucket("couchbase://localhost/dashboard")
+c = Bucket("couchbase://localhost/dashboard", password="memoryload")
 
 @app.route('/symptom/search/', methods=['GET'])
 def searchSymptom():
@@ -24,18 +26,24 @@ def searchSymptom():
   else:
     return "No search string provided", 404
   q = Query()
-  rows = c.query("dev_symptoms", "all")
+  rows = c.query("dev_symptom", "all")
   
   result = list()
-  
+
   for row in rows:
     found = False
-    for v in row.value.values():
-      if key.lower() in v.lower():
-        result.append(row.value)
-        found = True
+    for v in row.key.values():
+      try:
+        if key.lower() in v.lower():
+          result.append(row.key)
+          found = True
+      except AttributeError:
+        if key.lower == v:
+          result.append(row.key)
+          found = True
+   
     if found:
-      continue     
+        continue     
     
   resultContainer = dict()
   resultContainer["results"] = result
@@ -45,24 +53,36 @@ def searchSymptom():
 @app.route('/symptom/keys/', methods=['POST'])
 def getSymptoms():
   target = json.loads(request.data)
-  rows = c.query("dev_symptoms", "all")
+  rows = c.query("dev_symptom", "all")
   result = list()
-  for row in rows:
-    if row.value["key"] in str(target):
-      result.append(row.value)
 
+  for row in rows:
+    if row.key["key"] in target:
+      result.append(row.key)
+
+  print "keys" + str(target) + str(result)
   return json.dumps(result)
 
+@app.route('/symptom/keys/obj/', methods=['POST'])
+def getSymptomsAsObjects():
+  target = json.loads(request.data)
+  rows = c.query("dev_symptom", "all")
+  result = list()
+
+  for row in rows:
+    if row.key["key"] in target:
+      result.append(row.key)
+
+  resp = dict()
+  resp["results"] = result
+  return json.dumps(resp)
 
 @app.route('/symptom/all/', methods=['GET'])
 def allSymptoms():
   q = Query()
-  rows = c.query("dev_symptoms", "all")
+  rows = c.query("dev_symptom", "all")
   
   result = list()
-
-  if not rows:
-    return "uliuli"
 
   for row in rows:
     rowvalue = dict()
@@ -71,6 +91,14 @@ def allSymptoms():
     result.append(rowvalue)
     
   return json.dumps(result)
+
+@app.route('/symptom/all/obj/', methods=['GET'])
+def allSymptomsAsObject():
+  print "schemas as objects"
+  resp = dict()
+  resp["schemas"] = allSymptoms()
+  print "got values"
+  return json.dumps(resp)
 
 @app.route('/symptom/add/', methods=['POST'])
 def addsymptom():
@@ -95,11 +123,12 @@ def addsymptom():
   
   # check if same key already exists
   q = Query()
-  rows = c.query("dev_symptoms", "all")
-  for row in rows:
-    if data["key"] == row.value.get("key"):
-      resp["info"] = "Symptom already exists."
-      return json.dumps(resp)
+  rows = c.query("dev_symptom", "all")
+  if rows.rows_returned > 0:
+    for row in rows:
+      if data["key"] == row.value.get("key"):
+        resp["info"] = "Symptom already exists."
+        return json.dumps(resp)
   
   add(data)
 
@@ -141,11 +170,12 @@ def addfactor():
   
   # check if same key already exists
   q = Query()
-  rows = c.query("dev_factors", "all")
-  for row in rows:
-    if row.value and data["key"] == row.value.get("key"):
-      resp["info"] = "Factor already exists."
-      return json.dumps(resp)  
+  rows = c.query("dev_factor", "all")
+  if rows.rows_returned > 0:
+    for row in rows:
+      if row.value and data["key"] == row.value.get("key"):
+        resp["info"] = "Factor already exists."
+        return json.dumps(resp)  
 
   add(data)
   obj = c.get(data["key"])
@@ -166,11 +196,10 @@ def searchFactor():
   else:
     return "No search string provided", 404
   q = Query()
-  rows = c.query("dev_factors", "all")
+  rows = c.query("dev_factor", "all")
+  #rows = Bucket.view("_design/dev_symptom/_view/all")
   
   result = list()
-  
-  print "searching factor: " + str(key)
 
   for row in rows:
     found = False
@@ -195,18 +224,21 @@ def searchFactor():
 @app.route('/factor/keys/', methods=['POST'])
 def getFactors():
   target = json.loads(request.data)
-  rows = c.query("dev_factors", "all")
+  rows = c.query("dev_factor", "all")
   result = list()
   for row in rows:
-    if row.key["key"] in str(target):
+    if row.key["key"] in target:
       result.append(row.key)
-      
   return json.dumps(result)
 
 @app.route('/factor/all/', methods=['GET'])
 def getAllFactors():
-  rows = c.query("dev_factors", "all")
+  q = Query()
+  q.limit = 1
+  rows = c.query("dev_factor", "all", query=q)
   result = list()
+  print rows
+
   for row in rows:
     result.append(row.key)
 
@@ -247,23 +279,28 @@ def addschema():
   return json.dumps(resp)
 
 @app.route('/schema/all/', methods=['GET'])
-def getSchemas():
-  print "uliuli?"
+def allSchemas():
   q = Query()
-  print "1"
-  rows = c.query("dev_schemas", "all")
-  print "2"
+  rows = c.query("dev_schema", "all")
   result = list()
-  
-  print rows
-  if rows.rows_returned == 0:
-    return json.dumps(result)
+
   for row in rows:
     result.append(row.key)
   
-  print "all schemas"
-  print result
   return json.dumps(result)
+
+@app.route('/schema/all/obj/', methods=['GET'])
+def allSchemasAsObject():
+  print "schemas as objects"
+  resp = dict()
+  resp["schemas"] = json.loads(allSchemas())
+  js = resp["schemas"][1]["symptoms"]
+
+  resp["schemas"][1]["symptoms"] = js[0]
+  # fix this to load symptoms in a list not a list inside a list
+  print json.dumps(resp)
+
+  return json.dumps(resp)
 
 def add(data):
   print ("adding now, key: " + str(data["key"]))
@@ -274,4 +311,4 @@ def add(data):
 
 
 if __name__ == "__main__":
-  app.run(debug=True, host='0.0.0.0')
+  app.run(debug=True, host='0.0.0.0', port=PORT)

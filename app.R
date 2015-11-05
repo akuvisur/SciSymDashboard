@@ -6,7 +6,7 @@ library(shinyjs)
 library(shinydashboard)
 library(DT)
 
-schemas = jsonlite::fromJSON(getURL("http://localhost:5000/schema/all/"))
+schemas = jsonlite::fromJSON(getURL("http://kala1928.ddns.net:10001/schema/all/"))
 
 ui <- function() {
 
@@ -63,10 +63,10 @@ server <- function(input, output, session) {
   output$table_selected = renderUI({
     if (length(input$schematable_rows_selected)) {
       sr = as.numeric(input$schematable_rows_selected[1])
-      s = POST("http://localhost:5000/symptom/keys/",
+      s = POST("http://kala1928.ddns.net:10001/symptom/keys/",
         body = toJSON(schemas$symptoms[sr])
       )
-      f = POST("http://localhost:5000/factor/keys/",
+      f = POST("http://kala1928.ddns.net:10001/factor/keys/",
         body = toJSON(schemas$factors[sr])
       )
       fluidPage(
@@ -87,7 +87,7 @@ server <- function(input, output, session) {
       class=input$symptom_class,
       rep_window=input$symptom_window
     )
-    resp <- POST("http://localhost:5000/symptom/add/", body = toJSON(newsymptom))
+    resp <- POST("http://kala1928.ddns.net:10001/symptom/add/", body = toJSON(newsymptom))
     res = content(resp, "text")
     js = fromJSON(res)
     
@@ -114,7 +114,7 @@ server <- function(input, output, session) {
       range_max=input$factor_max_range
     )
     
-    resp <- POST("http://localhost:5000/factor/add/", body = toJSON(newfactor))
+    resp <- POST("http://kala1928.ddns.net:10001/factor/add/", body = toJSON(newfactor))
     res = content(resp, "text")
     js = fromJSON(res)
     
@@ -148,7 +148,7 @@ server <- function(input, output, session) {
       factors=list(input$factor_selector)
     )
 
-    resp <- POST("http://localhost:5000/schema/add/", body = toJSON(newschema))
+    resp <- POST("http://kala1928.ddns.net:10001/schema/add/", body = toJSON(newschema))
     res = content(resp, "text")
     js = fromJSON(res)
 
@@ -185,7 +185,7 @@ server <- function(input, output, session) {
 }
 
 renderSchemas <- function() {
-  schemas = jsonlite::fromJSON(getURL("http://localhost:5000/schema/all/"))
+  schemas = jsonlite::fromJSON(getURL("http://kala1928.ddns.net:10001/schema/all/"))
   output$schematable = DT::renderDataTable( {
     schemas[c("title", "desc", "author")]
   }, options = list(pageLength = 5), colnames=c("Title", "Description", "Author")
@@ -412,7 +412,7 @@ symptomCreatorInput <- function() {
       load = I("function(query, callback) {
         if(!query.length) return callback();
         $.ajax({
-          url: 'http://localhost:5000/symptom/search/?search=' + encodeURIComponent(query),
+          url: 'http://kala1928.ddns.net:10001/symptom/search/?search=' + encodeURIComponent(query),
           type: 'GET',
           error: function() {
             callback();
@@ -458,7 +458,7 @@ factorCreatorInput <- function() {
       load = I("function(query, callback) {
         if(!query.length) return callback();
         $.ajax({
-          url: 'http://localhost:5000/factor/search/?search=' + encodeURIComponent(query),
+          url: 'http://kala1928.ddns.net:10001/factor/search/?search=' + encodeURIComponent(query),
           type: 'GET',
           error: function() {
            callback();
